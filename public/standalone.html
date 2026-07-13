@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Schema Markup Generator — Auto-generate JSON-LD from any URL</title>
+<style>
+  :root{
+    --bg:#f4f6fb;--panel:#fff;--panel-2:#f8fafc;--ink:#111827;--ink-soft:#4b5563;--muted:#9aa4b2;
+    --border:#e4e8ef;--brand:#4f46e5;--brand-soft:#eef0ff;--brand-ink:#4338ca;--ok:#10b981;--ok-soft:#dcfce7;
+    --warn:#f59e0b;--warn-soft:#fef3c7;--danger:#ef4444;--danger-soft:#fee2e2;--radius:12px;
+    --code-bg:#0f172a;--code-key:#7dd3fc;--code-str:#86efac;--code-num:#fca5a5;--code-bool:#c4b5fd;--code-null:#94a3b8;--code-punc:#cbd5e1;
+    --shadow:0 1px 2px rgba(16,24,40,.04),0 8px 24px rgba(16,24,40,.06);
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --bg:#0b1020;--panel:#111827;--panel-2:#0f1626;--ink:#e5e7eb;--ink-soft:#c0c6d1;--muted:#6b7686;
+    --border:#232c3d;--brand:#6366f1;--brand-soft:#1c2140;--brand-ink:#c7d2fe;--ok:#34d399;--ok-soft:#0d2a22;
+    --warn:#fbbf24;--warn-soft:#2b230d;--danger:#f87171;--danger-soft:#2b1414;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35);
+  }}
+  *{box-sizing:border-box}html,body{margin:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.45;-webkit-font-smoothing:antialiased}
+  header.top{display:flex;align-items:center;gap:14px;padding:14px 22px;background:var(--panel);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:20}
+  .logo{width:34px;height:34px;border-radius:9px;flex:none;background:linear-gradient(135deg,var(--brand),#8b5cf6);display:grid;place-items:center;color:#fff;font-weight:800}
+  header.top h1{font-size:16px;margin:0;font-weight:700;letter-spacing:-.01em}
+  header.top p{margin:0;font-size:12px;color:var(--muted)}
+  .grow{flex:1}
+  .top-links a{color:var(--ink-soft);font-size:12.5px;text-decoration:none;margin-left:14px}
+  .top-links a:hover{color:var(--brand-ink)}
+  .wrap{max-width:1080px;margin:0 auto;padding:20px 22px 60px}
+
+  .panel{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:18px}
+  .panel-body{padding:16px}
+  label.lbl{display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin:0 0 6px}
+  textarea,input,select{width:100%;padding:10px 12px;font-size:13.5px;color:var(--ink);background:var(--panel-2);border:1px solid var(--border);border-radius:9px;font-family:inherit;outline:none;transition:border-color .12s,box-shadow .12s}
+  textarea:focus,input:focus,select:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft)}
+  textarea{min-height:110px;resize:vertical;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px}
+  .controls{display:flex;flex-wrap:wrap;gap:12px 18px;align-items:center;margin-top:12px}
+  .controls label.chk{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--ink-soft);font-weight:500;cursor:pointer}
+  .controls label.chk input{width:auto}
+  button{font-family:inherit;cursor:pointer;border:0;border-radius:8px;font-weight:600;transition:filter .12s,background .12s}
+  button:active{transform:translateY(1px)}
+  button:disabled{opacity:.55;cursor:not-allowed}
+  .btn{background:var(--brand);color:#fff;padding:10px 18px;font-size:13.5px}
+  .btn:hover:not(:disabled){filter:brightness(1.07)}
+  .btn.ghost{background:var(--brand-soft);color:var(--brand-ink)}
+  .btn.sm{padding:6px 11px;font-size:12px}
+  .btn.mini{padding:5px 10px;font-size:11.5px;background:var(--panel-2);color:var(--ink-soft);border:1px solid var(--border)}
+  .btn.mini:hover{border-color:var(--brand);color:var(--brand-ink)}
+  .hint{font-size:11.5px;color:var(--muted);margin-top:6px}
+
+  .bar{display:flex;align-items:center;gap:12px;margin:6px 0 16px;flex-wrap:wrap}
+  .bar .summary{font-size:13px;color:var(--ink-soft)}
+  .spinner{width:15px;height:15px;border:2px solid var(--border);border-top-color:var(--brand);border-radius:50%;animation:spin .7s linear infinite;display:inline-block;vertical-align:-2px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  .card{border:1px solid var(--border);border-radius:var(--radius);background:var(--panel);box-shadow:var(--shadow);margin-bottom:14px;overflow:hidden}
+  .card-head{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+  .card-head .u{font-size:12.5px;color:var(--ink-soft);word-break:break-all;flex:1;min-width:200px}
+  .card-head .u a{color:var(--ink-soft);text-decoration:none}.card-head .u a:hover{color:var(--brand-ink)}
+  .badge{font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;white-space:nowrap}
+  .badge.type{background:var(--brand-soft);color:var(--brand-ink)}
+  .conf{font-size:10.5px;font-weight:700;padding:3px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:.03em}
+  .conf.high{background:var(--ok-soft);color:var(--ok)}
+  .conf.medium{background:var(--warn-soft);color:var(--warn)}
+  .conf.low,.conf.override{background:var(--border);color:var(--ink-soft)}
+  .card-body{padding:0}
+  .reasons{font-size:12px;color:var(--muted);padding:10px 14px;border-bottom:1px dashed var(--border)}
+  .reasons b{color:var(--ink-soft)}
+  .warns{padding:10px 14px;border-bottom:1px dashed var(--border);display:flex;flex-direction:column;gap:5px}
+  .warn-row{font-size:12px;color:var(--warn);display:flex;gap:7px;align-items:flex-start}
+  .warn-row .ic{flex:none}
+  .code-tools{display:flex;gap:8px;align-items:center;padding:9px 14px;flex-wrap:wrap;background:var(--panel-2);border-bottom:1px solid var(--border)}
+  .code-tools .regen{display:flex;gap:6px;align-items:center;margin-left:auto}
+  .code-tools select{width:auto;padding:5px 8px;font-size:12px}
+  pre.code{margin:0;padding:14px;background:var(--code-bg);color:var(--code-punc);font-size:12.5px;line-height:1.55;overflow:auto;max-height:420px;font-family:"SF Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  pre.code .key{color:var(--code-key)}pre.code .str{color:var(--code-str)}pre.code .num{color:var(--code-num)}pre.code .bool{color:var(--code-bool)}pre.code .null{color:var(--code-null)}
+  .card.err{border-color:var(--danger)}
+  .err-msg{padding:14px;color:var(--danger);font-size:13px}
+  .extract{padding:10px 14px;font-size:12px;color:var(--muted);border-top:1px dashed var(--border)}
+  .extract span{color:var(--ink-soft)}
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(10px);background:var(--ok);color:#fff;font-size:13px;font-weight:600;padding:9px 18px;border-radius:9px;opacity:0;transition:.2s;pointer-events:none;z-index:50}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .empty{text-align:center;color:var(--muted);font-size:13px;padding:30px 0}
+  a.inline{color:var(--brand-ink)}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="logo">{ }</div>
+  <div>
+    <h1>Schema Markup Generator</h1>
+    <p>Paste URLs → auto-generate JSON-LD structured data → review the code</p>
+  </div>
+  <div class="grow"></div>
+  <div class="top-links">
+    <a href="https://validator.schema.org" target="_blank" rel="noopener">Validator ↗</a>
+    <a href="https://search.google.com/test/rich-results" target="_blank" rel="noopener">Rich Results ↗</a>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="panel"><div class="panel-body">
+    <label class="lbl" for="urls">Page URLs — one per line (up to 50)</label>
+    <textarea id="urls" placeholder="https://yoursite.com/&#10;https://yoursite.com/products/blue-shoes&#10;https://yoursite.com/blog/how-to-train"></textarea>
+    <div class="controls">
+      <button class="btn" id="genBtn">Generate schema</button>
+      <label class="chk"><input type="checkbox" id="bc" checked> Add BreadcrumbList to each page</label>
+      <label class="chk"><input type="checkbox" id="wrap"> Wrap output in &lt;script&gt; tag</label>
+      <span style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)">via
+        <select id="proxy" style="width:auto;padding:5px 8px;font-size:12px">
+          <option value="https://api.allorigins.win/raw?url=">allorigins</option>
+          <option value="https://corsproxy.io/?url=">corsproxy.io</option>
+          <option value="https://api.codetabs.com/v1/proxy/?quest=">codetabs</option>
+        </select>
+      </span>
+    </div>
+    <div class="hint">Runs entirely in your browser. It fetches each page through a public CORS proxy (needed because browsers can't read other sites directly), reads its meta tags / Open Graph / existing structured data, auto-detects the best Schema.org type, and builds the JSON-LD. If a page won't load, try another proxy in the dropdown.</div>
+  </div></div>
+
+  <div class="bar" id="bar" style="display:none">
+    <span class="summary" id="summary"></span>
+    <div class="grow"></div>
+    <button class="btn ghost sm" id="copyAllBtn" style="display:none">Copy all</button>
+    <button class="btn mini" id="exportBtn" style="display:none">Export .json</button>
+  </div>
+
+  <div id="results"></div>
+</div>
+
+<div class="toast" id="toast">Copied!</div>
+
+<script>
+/* ====== extraction engine (identical to the tested src/extract.js) ====== */
+/* =========================================================================
+   extract.js — crawl a page's HTML and auto-generate JSON-LD structured data.
+   Zero dependencies. Pure functions so they can be unit-tested without a network.
+
+   Pipeline:  extractMetadata(html,url) -> detectType(meta,url) -> buildJsonLd(...)
+   Public:    generateForPage(html, url, opts) -> full result object
+   ========================================================================= */
+
+/* ---------------- small HTML helpers ---------------- */
+function decodeEntities(s = '') {
+  return s
+    .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"').replace(/&#0?39;/g, "'").replace(/&apos;/g, "'")
+    .replace(/&#x27;/gi, "'").replace(/&nbsp;/g, ' ')
+    .replace(/&#(\d+);/g, (_, d) => String.fromCodePoint(+d))
+    .replace(/&#x([0-9a-f]+);/gi, (_, h) => String.fromCodePoint(parseInt(h, 16)))
+    .trim();
+}
+function stripTags(s = '') { return decodeEntities(s.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ')); }
+function attr(tag, name) {
+  const m = tag.match(new RegExp(name + '\\s*=\\s*"([^"]*)"', 'i'))
+        || tag.match(new RegExp(name + "\\s*=\\s*'([^']*)'", 'i'));
+  return m ? decodeEntities(m[1]) : '';
+}
+function absolutize(href, base) {
+  if (!href) return '';
+  try { return new URL(href, base).href; } catch { return href; }
+}
+
+/* ---------------- metadata extraction ---------------- */
+function extractMetadata(html, pageUrl = '') {
+  const meta = {
+    url: pageUrl, canonical: '', title: '', h1: '', description: '',
+    og: {}, twitter: {}, article: {}, product: {}, itemprop: {},
+    author: '', siteName: '', ogType: '', image: '', lang: '',
+    price: '', currency: '', availability: '', sku: '', brand: '',
+    jsonLd: [], jsonLdTypes: [], generator: '',
+  };
+
+  // <html lang>
+  const htmlTag = html.match(/<html[^>]*>/i);
+  if (htmlTag) meta.lang = attr(htmlTag[0], 'lang');
+
+  // <title>
+  const t = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
+  if (t) meta.title = stripTags(t[1]);
+
+  // first <h1>
+  const h1 = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
+  if (h1) meta.h1 = stripTags(h1[1]);
+
+  // <link rel="canonical">
+  const links = html.match(/<link[^>]*>/gi) || [];
+  for (const l of links) {
+    const rel = attr(l, 'rel').toLowerCase();
+    if (rel === 'canonical') meta.canonical = absolutize(attr(l, 'href'), pageUrl);
+  }
+
+  // <meta> tags
+  const metas = html.match(/<meta[^>]*>/gi) || [];
+  for (const m of metas) {
+    const prop = (attr(m, 'property') || '').toLowerCase();
+    const name = (attr(m, 'name') || '').toLowerCase();
+    const ip = (attr(m, 'itemprop') || '').toLowerCase();
+    const content = attr(m, 'content');
+    if (!content && !ip) continue;
+    if (prop.startsWith('og:')) meta.og[prop.slice(3)] = content;
+    else if (prop.startsWith('article:')) meta.article[prop.slice(8)] = content;
+    else if (prop.startsWith('product:')) meta.product[prop.slice(8)] = content;
+    else if (name.startsWith('twitter:')) meta.twitter[name.slice(8)] = content;
+    else if (name === 'description') meta.description = content;
+    else if (name === 'author') meta.author = content;
+    else if (name === 'generator') meta.generator = content;
+    if (ip) meta.itemprop[ip] = content || attr(m, 'href');
+  }
+
+  // existing JSON-LD blocks
+  const ld = html.match(/<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi) || [];
+  for (const block of ld) {
+    const body = block.replace(/<script[^>]*>/i, '').replace(/<\/script>/i, '').trim();
+    try {
+      let parsed = JSON.parse(body);
+      const arr = Array.isArray(parsed) ? parsed : (parsed['@graph'] || [parsed]);
+      for (const node of arr) {
+        if (node && node['@type']) {
+          meta.jsonLd.push(node);
+          [].concat(node['@type']).forEach(ty => meta.jsonLdTypes.push(ty));
+        }
+      }
+    } catch { /* malformed LD — ignore */ }
+  }
+
+  // consolidate common fields
+  meta.ogType     = (meta.og.type || '').toLowerCase();
+  meta.siteName   = meta.og.site_name || '';
+  meta.image      = absolutize(meta.og.image || meta.twitter.image || meta.itemprop.image || '', pageUrl);
+  meta.description= meta.description || meta.og.description || meta.twitter.description || '';
+  meta.author     = meta.author || meta.article.author || '';
+  meta.price      = meta.product.price_amount || meta.product['price:amount'] || meta.og['price:amount'] || meta.itemprop.price || '';
+  meta.currency   = meta.product.price_currency || meta.product['price:currency'] || meta.og['price:currency'] || meta.itemprop.pricecurrency || '';
+  meta.availability = meta.product.availability || meta.og.availability || meta.itemprop.availability || '';
+  meta.sku        = meta.itemprop.sku || '';
+  meta.brand      = meta.itemprop.brand || '';
+  meta.canonical  = meta.canonical || meta.og.url || pageUrl;
+  return meta;
+}
+
+/* ---------------- schema-type detection ---------------- */
+const PRIMARY_LD_TYPES = new Set([
+  'Product','Article','BlogPosting','NewsArticle','Recipe','FAQPage','HowTo','Event',
+  'JobPosting','Course','LocalBusiness','Restaurant','Store','VideoObject','Person',
+  'Book','Movie','SoftwareApplication','MedicalClinic','Physician','LegalService',
+]);
+
+function detectType(meta, pageUrl = '') {
+  const reasons = [];
+  let path = '/';
+  try { path = new URL(pageUrl).pathname; } catch {}
+
+  // 1) strongest: an existing primary JSON-LD type already on the page
+  const existingPrimary = meta.jsonLdTypes.find(t => PRIMARY_LD_TYPES.has(t));
+  if (existingPrimary) {
+    reasons.push(`Page already declares <${existingPrimary}> JSON-LD`);
+    return { type: existingPrimary, confidence: 'high', reasons, fromExisting: true };
+  }
+
+  // 2) product signals
+  if (meta.price || meta.ogType.startsWith('product') || meta.jsonLdTypes.includes('Offer')) {
+    reasons.push(meta.price ? `Price metadata found (${meta.price})` : `og:type is "${meta.ogType}"`);
+    return { type: 'Product', confidence: meta.price ? 'high' : 'medium', reasons };
+  }
+
+  // 3) article signals
+  if (meta.ogType === 'article' || meta.article.published_time || (meta.author && meta.article.section)) {
+    reasons.push(meta.ogType === 'article' ? 'og:type is "article"' : 'article:published_time present');
+    const type = /blog/i.test(path) ? 'BlogPosting' : 'Article';
+    return { type, confidence: 'high', reasons };
+  }
+
+  // 4) media
+  if (meta.ogType.startsWith('video')) { reasons.push('og:type is video'); return { type: 'VideoObject', confidence: 'medium', reasons }; }
+  if (meta.ogType === 'book')          { reasons.push('og:type is book');  return { type: 'Book', confidence: 'medium', reasons }; }
+  if (meta.ogType === 'profile')       { reasons.push('og:type is profile'); return { type: 'Person', confidence: 'medium', reasons }; }
+
+  // 5) homepage → Organization + WebSite
+  if (path === '/' || path === '') {
+    reasons.push('Homepage (root path) — best represented as Organization + WebSite');
+    return { type: 'Organization', confidence: 'medium', reasons };
+  }
+
+  // 6) contact / about pages
+  if (/contact/i.test(path)) { reasons.push('URL looks like a contact page'); return { type: 'LocalBusiness', confidence: 'low', reasons }; }
+  if (/about/i.test(path))   { reasons.push('URL looks like an about page');   return { type: 'AboutPage', confidence: 'low', reasons }; }
+
+  // 7) fallback
+  reasons.push('No strong signals — using generic WebPage');
+  return { type: 'WebPage', confidence: 'low', reasons };
+}
+
+/* ---------------- JSON-LD builders ---------------- */
+const PH = k => `YOUR_${k}`;
+function pick(...vals) { for (const v of vals) if (v && String(v).trim()) return String(v).trim(); return ''; }
+function orPlaceholder(val, key) { return pick(val) || PH(key); }
+function normAvailability(a = '') {
+  a = a.toLowerCase();
+  if (a.includes('instock') || a.includes('in stock') || a.includes('in_stock')) return 'https://schema.org/InStock';
+  if (a.includes('outofstock') || a.includes('out of stock')) return 'https://schema.org/OutOfStock';
+  if (a.includes('preorder')) return 'https://schema.org/PreOrder';
+  if (a) return 'https://schema.org/' + a.replace(/[^a-z]/gi, '');
+  return 'https://schema.org/InStock';
+}
+
+function titleCase(s) { return s.replace(/[-_]+/g, ' ').replace(/\b\w/g, c => c.toUpperCase()); }
+
+function buildBreadcrumb(meta, pageUrl) {
+  let u; try { u = new URL(pageUrl); } catch { return null; }
+  const segs = u.pathname.split('/').filter(Boolean);
+  const items = [{ '@type': 'ListItem', position: 1, name: 'Home', item: u.origin + '/' }];
+  let acc = u.origin;
+  segs.forEach((seg, i) => {
+    acc += '/' + seg;
+    const name = titleCase(decodeURIComponent(seg).replace(/\.[a-z]+$/i, ''));
+    items.push({ '@type': 'ListItem', position: i + 2, name, item: acc });
+  });
+  if (items.length < 2) return null;
+  return { '@context': 'https://schema.org', '@type': 'BreadcrumbList', itemListElement: items };
+}
+
+function buildJsonLd(type, meta, pageUrl) {
+  const url = pick(meta.canonical, pageUrl);
+  const name = pick(meta.og.title, meta.title, meta.h1);
+  const desc = pick(meta.description);
+  const img = pick(meta.image);
+  const base = { '@context': 'https://schema.org', '@type': type };
+
+  switch (type) {
+    case 'Product': {
+      const o = { ...base, name: orPlaceholder(name, 'PRODUCT_NAME') };
+      if (img) o.image = [img];
+      if (desc) o.description = desc;
+      if (meta.sku) o.sku = meta.sku;
+      o.brand = { '@type': 'Brand', name: orPlaceholder(meta.brand || meta.siteName, 'BRAND') };
+      o.offers = {
+        '@type': 'Offer', url,
+        price: orPlaceholder(meta.price, 'PRICE'),
+        priceCurrency: orPlaceholder(meta.currency, 'CURRENCY'),
+        availability: normAvailability(meta.availability),
+        itemCondition: 'https://schema.org/NewCondition',
+      };
+      return o;
+    }
+    case 'Article': case 'BlogPosting': case 'NewsArticle': {
+      const o = { ...base, headline: orPlaceholder(name, 'HEADLINE') };
+      if (img) o.image = [img];
+      o.author = { '@type': 'Person', name: orPlaceholder(meta.author, 'AUTHOR_NAME') };
+      o.publisher = { '@type': 'Organization', name: orPlaceholder(meta.siteName, 'PUBLISHER'),
+        logo: { '@type': 'ImageObject', url: PH('LOGO_URL') } };
+      if (meta.article.published_time) o.datePublished = meta.article.published_time;
+      else o.datePublished = PH('DATE_PUBLISHED');
+      if (meta.article.modified_time) o.dateModified = meta.article.modified_time;
+      if (desc) o.description = desc;
+      o.mainEntityOfPage = { '@type': 'WebPage', '@id': url };
+      if (meta.lang) o.inLanguage = meta.lang;
+      return o;
+    }
+    case 'Organization': {
+      const o = { ...base, '@id': (safeOrigin(url)) + '#organization',
+        name: orPlaceholder(meta.siteName || meta.title, 'COMPANY_NAME'), url: safeOrigin(url) + '/' };
+      if (img) o.logo = { '@type': 'ImageObject', url: img };
+      if (desc) o.description = desc;
+      o.sameAs = [PH('FACEBOOK_URL'), PH('LINKEDIN_URL'), PH('INSTAGRAM_URL')];
+      return o;
+    }
+    case 'WebSite': {
+      return { ...base, '@id': safeOrigin(url) + '#website',
+        name: orPlaceholder(meta.siteName || meta.title, 'SITE_NAME'), url: safeOrigin(url) + '/',
+        potentialAction: { '@type': 'SearchAction',
+          target: { '@type': 'EntryPoint', urlTemplate: safeOrigin(url) + '/?s={search_term_string}' },
+          'query-input': 'required name=search_term_string' } };
+    }
+    case 'LocalBusiness': case 'Restaurant': case 'Store': case 'MedicalClinic': case 'Physician': case 'LegalService': {
+      const o = { ...base, '@id': safeOrigin(url) + '#localbusiness',
+        name: orPlaceholder(meta.siteName || name, 'BUSINESS_NAME'), url };
+      if (img) o.image = img;
+      o.telephone = PH('PHONE');
+      o.address = { '@type': 'PostalAddress', streetAddress: PH('STREET'), addressLocality: PH('CITY'),
+        addressRegion: PH('REGION'), postalCode: PH('POSTAL_CODE'), addressCountry: PH('COUNTRY_CODE') };
+      if (desc) o.description = desc;
+      o.priceRange = PH('PRICE_RANGE');
+      return o;
+    }
+    case 'VideoObject': {
+      const o = { ...base, name: orPlaceholder(name, 'VIDEO_TITLE'),
+        description: orPlaceholder(desc, 'VIDEO_DESCRIPTION'),
+        thumbnailUrl: [img || PH('THUMBNAIL_URL')], uploadDate: PH('UPLOAD_DATE') };
+      if (meta.og['video:url'] || meta.og.video) o.contentUrl = meta.og['video:url'] || meta.og.video;
+      return o;
+    }
+    case 'Person': {
+      const o = { ...base, name: orPlaceholder(name, 'FULL_NAME'), url };
+      if (img) o.image = img;
+      if (desc) o.description = desc;
+      o.sameAs = [PH('LINKEDIN_URL'), PH('TWITTER_URL')];
+      return o;
+    }
+    case 'Book': {
+      const o = { ...base, name: orPlaceholder(name, 'BOOK_TITLE'),
+        author: { '@type': 'Person', name: orPlaceholder(meta.author, 'AUTHOR_NAME') } };
+      if (img) o.image = img;
+      if (desc) o.description = desc;
+      return o;
+    }
+    case 'AboutPage': case 'ContactPage': case 'WebPage': default: {
+      const o = { ...base, name: orPlaceholder(name, 'PAGE_TITLE'), url };
+      if (desc) o.description = desc;
+      if (meta.lang) o.inLanguage = meta.lang;
+      return o;
+    }
+  }
+}
+function safeOrigin(u) { try { return new URL(u).origin; } catch { return u; } }
+
+/* ---------------- warnings ---------------- */
+function collectWarnings(type, jsonld, meta) {
+  const w = [];
+  const flat = JSON.stringify(jsonld);
+  const placeholders = [...new Set((flat.match(/YOUR_[A-Z_]+/g) || []))];
+  if (placeholders.length) w.push(`Fill in ${placeholders.length} placeholder(s): ${placeholders.join(', ')}`);
+  if (!meta.image && ['Product', 'Article', 'BlogPosting', 'VideoObject'].includes(type))
+    w.push('No image found on the page — image is important for rich results.');
+  if (meta.jsonLdTypes.length) w.push(`Page already has JSON-LD: ${[...new Set(meta.jsonLdTypes)].join(', ')} (review for duplicates before adding).`);
+  return w;
+}
+
+/* ---------------- top-level ---------------- */
+function generateForPage(html, pageUrl, opts = {}) {
+  const meta = extractMetadata(html, pageUrl);
+  const detected = opts.typeOverride
+    ? { type: opts.typeOverride, confidence: 'override', reasons: ['Type set manually'] }
+    : detectType(meta, pageUrl);
+
+  const primary = buildJsonLd(detected.type, meta, pageUrl);
+  const graph = [primary];
+
+  // homepage gets Organization + WebSite together
+  if (detected.type === 'Organization' && !opts.typeOverride) {
+    graph.push(buildJsonLd('WebSite', meta, pageUrl));
+  }
+  // breadcrumbs pair well with almost everything
+  if (opts.includeBreadcrumb !== false) {
+    const bc = buildBreadcrumb(meta, pageUrl);
+    if (bc) graph.push(bc);
+  }
+
+  const jsonld = graph.length === 1 ? graph[0] : graph;
+  return {
+    url: pageUrl,
+    detectedType: detected.type,
+    confidence: detected.confidence,
+    reasons: detected.reasons,
+    fromExisting: !!detected.fromExisting,
+    extracted: {
+      title: meta.title, description: meta.description, image: meta.image,
+      siteName: meta.siteName, ogType: meta.ogType, price: meta.price,
+      currency: meta.currency, author: meta.author, existingSchema: [...new Set(meta.jsonLdTypes)],
+    },
+    warnings: collectWarnings(detected.type, jsonld, meta),
+    jsonld,
+  };
+}
+
+/* ================= client-side controller (no server) ================= */
+const $ = s => document.querySelector(s);
+const results = $('#results');
+let lastResults = [];
+const htmlCache = {};   // url -> fetched HTML, so type-override doesn't re-crawl
+const CONCURRENCY = 4;
+
+const ALL_TYPES = ['Product','Article','BlogPosting','NewsArticle','Organization','WebSite','LocalBusiness','Restaurant','Store','Physician','LegalService','Person','WebPage','AboutPage','ContactPage','VideoObject','Book','FAQPage','Event','Recipe'];
+
+$('#genBtn').addEventListener('click', generate);
+$('#urls').addEventListener('keydown', e => { if ((e.metaKey||e.ctrlKey) && e.key === 'Enter') generate(); });
+$('#wrap').addEventListener('change', () => { if (lastResults.length) renderAll(lastResults); });
+
+function normalizeUrl(u) {
+  u = u.trim(); if (!u) return null;
+  if (!/^https?:\/\//i.test(u)) u = 'https://' + u;
+  try { return new URL(u).href; } catch { return null; }
+}
+
+async function fetchHtml(url) {
+  const chosen = $('#proxy').value;
+  const order = [chosen, ...['https://api.allorigins.win/raw?url=','https://corsproxy.io/?url=','https://api.codetabs.com/v1/proxy/?quest='].filter(p => p !== chosen)];
+  let lastErr;
+  for (const p of order) {
+    try {
+      const res = await fetch(p + encodeURIComponent(url));
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const text = await res.text();
+      if (!text || text.length < 40) throw new Error('empty response');
+      return text;
+    } catch (e) { lastErr = e; }
+  }
+  throw new Error((lastErr && lastErr.message) || 'could not fetch');
+}
+
+async function generateOne(rawUrl, opts) {
+  const url = normalizeUrl(rawUrl);
+  if (!url) return { url: rawUrl, error: 'Invalid URL' };
+  try {
+    const html = opts.reuseHtml && htmlCache[url] ? htmlCache[url] : await fetchHtml(url);
+    htmlCache[url] = html;
+    return generateForPage(html, url, opts);   // <- from inlined engine
+  } catch (e) { return { url, error: e.message }; }
+}
+
+async function generate() {
+  let urls = $('#urls').value.split('\n').map(s => s.trim()).filter(Boolean).slice(0, 50);
+  if (!urls.length) { toast('Enter at least one URL'); return; }
+  const opts = { includeBreadcrumb: $('#bc').checked };
+  setBusy(true, urls.length);
+  results.innerHTML = '';
+  const out = new Array(urls.length);
+  let done = 0, idx = 0;
+  async function worker() {
+    while (idx < urls.length) {
+      const i = idx++;
+      out[i] = await generateOne(urls[i], opts);
+      done++; $('#summary').innerHTML = `<span class="spinner"></span> Crawling… ${done}/${urls.length}`;
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(CONCURRENCY, urls.length) }, worker));
+  lastResults = out;
+  renderAll(out);
+  setBusy(false);
+}
+
+function setBusy(busy, n) {
+  $('#genBtn').disabled = busy;
+  $('#bar').style.display = 'flex';
+  if (busy) { $('#summary').innerHTML = `<span class="spinner"></span> Crawling ${n} page${n>1?'s':''}…`; $('#copyAllBtn').style.display='none'; $('#exportBtn').style.display='none'; }
+}
+
+function renderAll(items) {
+  const ok = items.filter(r => r && !r.error).length;
+  const err = items.length - ok;
+  $('#summary').textContent = `${ok} generated${err ? ` · ${err} failed` : ''}`;
+  $('#copyAllBtn').style.display = ok ? 'inline-block' : 'none';
+  $('#exportBtn').style.display = ok ? 'inline-block' : 'none';
+  results.innerHTML = '';
+  items.forEach((r, i) => results.appendChild(r.error ? errorCard(r) : resultCard(r, i)));
+}
+
+function errorCard(r) {
+  const c = el('div', 'card err');
+  c.innerHTML = `<div class="card-head"><div class="u">${esc(r.url)}</div><span class="conf low">failed</span></div>
+    <div class="err-msg">⚠ ${esc(r.error)} — try a different proxy in the dropdown, or check the URL.</div>`;
+  return c;
+}
+
+function resultCard(r, i) {
+  const c = el('div', 'card');
+  const codeStr = JSON.stringify(r.jsonld, null, 2);
+  const head = el('div', 'card-head');
+  head.innerHTML = `<div class="u"><a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.url)}</a></div>
+    <span class="badge type">${esc(r.detectedType)}</span>
+    <span class="conf ${r.confidence}">${r.fromExisting ? 'found on page' : r.confidence}</span>`;
+  c.appendChild(head);
+
+  if (r.reasons && r.reasons.length) {
+    const rs = el('div', 'reasons'); rs.innerHTML = `<b>Why this type:</b> ${r.reasons.map(esc).join('; ')}`; c.appendChild(rs);
+  }
+  if (r.warnings && r.warnings.length) {
+    const w = el('div', 'warns');
+    r.warnings.forEach(x => { const row = el('div','warn-row'); row.innerHTML = `<span class="ic">⚠</span><span>${esc(x)}</span>`; w.appendChild(row); });
+    c.appendChild(w);
+  }
+
+  const tools = el('div', 'code-tools');
+  const copyBtn = el('button', 'btn sm', 'Copy'); copyBtn.onclick = () => copy(displayText(r.jsonld));
+  const dlBtn = el('button', 'btn mini', 'Download'); dlBtn.onclick = () => download(r);
+  tools.appendChild(copyBtn); tools.appendChild(dlBtn);
+  const regen = el('div', 'regen');
+  const lbl = el('span'); lbl.textContent = 'Type:'; lbl.style.cssText = 'font-size:12px;color:var(--muted)';
+  const sel = el('select');
+  ALL_TYPES.forEach(t => { const o = el('option'); o.value = t; o.textContent = t; if (t === r.detectedType) o.selected = true; sel.appendChild(o); });
+  sel.onchange = () => regenerate(r.url, sel.value, c, i);
+  regen.appendChild(lbl); regen.appendChild(sel);
+  tools.appendChild(regen);
+  c.appendChild(tools);
+
+  const pre = el('pre', 'code'); pre.innerHTML = highlight(codeStr); c.appendChild(pre);
+
+  const ex = r.extracted || {};
+  const bits = [];
+  if (ex.title) bits.push(`title <span>${esc(ex.title)}</span>`);
+  if (ex.price) bits.push(`price <span>${esc(ex.price)} ${esc(ex.currency||'')}</span>`);
+  if (ex.author) bits.push(`author <span>${esc(ex.author)}</span>`);
+  if (ex.existingSchema && ex.existingSchema.length) bits.push(`existing <span>${esc(ex.existingSchema.join(', '))}</span>`);
+  if (bits.length) { const e = el('div','extract'); e.innerHTML = 'Extracted: ' + bits.join(' &nbsp;·&nbsp; '); c.appendChild(e); }
+  return c;
+}
+
+async function regenerate(url, typeOverride, card, i) {
+  const pre = card.querySelector('pre.code');
+  pre.innerHTML = '<span class="null">Regenerating…</span>';
+  const r = await generateOne(url, { typeOverride, includeBreadcrumb: $('#bc').checked, reuseHtml: true });
+  if (r.error) { pre.innerHTML = '<span class="null">' + esc(r.error) + '</span>'; return; }
+  lastResults[i] = r;
+  card.replaceWith(resultCard(r, i));
+}
+
+$('#copyAllBtn').addEventListener('click', () => {
+  const txt = lastResults.filter(r => r && !r.error).map(r => displayText(r.jsonld)).join('\n\n');
+  copy(txt);
+});
+$('#exportBtn').addEventListener('click', () => {
+  const payload = lastResults.filter(r => r && !r.error).map(r => ({ url: r.url, type: r.detectedType, jsonld: r.jsonld }));
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const a = el('a'); a.href = URL.createObjectURL(blob); a.download = 'schema-markup.json';
+  document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href);
+});
+
+/* ---------- shared helpers ---------- */
+function displayText(jsonld) {
+  const json = JSON.stringify(jsonld, null, 2);
+  return $('#wrap').checked ? '<script type="application/ld+json">\n' + json + '\n<\/script>' : json;
+}
+function el(tag, cls, txt) { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function highlight(json) {
+  const wrapped = $('#wrap').checked;
+  json = esc(json);
+  const body = json.replace(/("(?:\\.|[^"\\])*"(\s*:)?|\b(?:true|false)\b|\bnull\b|-?\d+(?:\.\d+)?)/g, m => {
+    let cls = 'num';
+    if (/^"/.test(m)) cls = /:\s*$/.test(m) ? 'key' : 'str';
+    else if (/true|false/.test(m)) cls = 'bool'; else if (/null/.test(m)) cls = 'null';
+    return `<span class="${cls}">${m}</span>`;
+  });
+  return wrapped ? '<span class="null">&lt;script type="application/ld+json"&gt;</span>\n' + body + '\n<span class="null">&lt;/script&gt;</span>' : body;
+}
+function download(r) {
+  const blob = new Blob([displayText(r.jsonld)], { type: 'application/json' });
+  const a = el('a'); a.href = URL.createObjectURL(blob); a.download = (r.detectedType || 'schema') + '.json';
+  document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href);
+}
+let toastTimer;
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 1600); }
+async function copy(text) {
+  try { await navigator.clipboard.writeText(text); toast('Copied!'); }
+  catch { const ta = el('textarea'); ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); toast('Copied!'); }
+}
+
+</script>
+</body>
+</html>

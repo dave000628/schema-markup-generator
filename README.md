@@ -7,7 +7,14 @@ gives you an interface to review, tweak, and copy the code.
 Built from the SEO Schema Builder skill (Schema.org v30.0). No AI key required —
 detection is heuristic and deterministic.
 
-## Run it
+## Two ways to use it
+
+**A. No install — just open a file.** Download `public/standalone.html` and
+double-click it. It runs entirely in your browser and fetches pages through a
+public CORS proxy (switchable in the UI). Easiest for non-technical use; the
+only dependency is that a public proxy is reachable.
+
+**B. Run the local server** (more robust/private, fetches directly, no proxy):
 
 ```bash
 node server.js
