@@ -1,0 +1,1083 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Schema Markup Generator — JSON-LD Structured Data Builder</title>
+<meta name="description" content="Generate valid, production-ready JSON-LD structured data for 40+ Schema.org types. Powered by the SEO Schema Builder.">
+<style>
+  :root{
+    --bg:#f4f6fb; --panel:#ffffff; --panel-2:#f8fafc; --ink:#111827; --ink-soft:#4b5563;
+    --muted:#9aa4b2; --border:#e4e8ef; --brand:#4f46e5; --brand-soft:#eef0ff; --brand-ink:#4338ca;
+    --ok:#10b981; --warn:#f59e0b; --danger:#ef4444; --radius:12px;
+    --code-bg:#0f172a; --code-key:#7dd3fc; --code-str:#86efac; --code-num:#fca5a5;
+    --code-bool:#c4b5fd; --code-null:#94a3b8; --code-punc:#cbd5e1;
+    --shadow:0 1px 2px rgba(16,24,40,.04), 0 8px 24px rgba(16,24,40,.06);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0b1020; --panel:#111827; --panel-2:#0f1626; --ink:#e5e7eb; --ink-soft:#c0c6d1;
+      --muted:#6b7686; --border:#232c3d; --brand:#6366f1; --brand-soft:#1c2140; --brand-ink:#c7d2fe;
+      --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 30px rgba(0,0,0,.35);
+    }
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg); color:var(--ink); line-height:1.45; -webkit-font-smoothing:antialiased;
+  }
+  header.top{
+    display:flex; align-items:center; gap:14px; padding:14px 22px;
+    background:var(--panel); border-bottom:1px solid var(--border); position:sticky; top:0; z-index:20;
+  }
+  .logo{
+    width:34px;height:34px;border-radius:9px;flex:none;
+    background:linear-gradient(135deg,var(--brand),#8b5cf6);
+    display:grid;place-items:center;color:#fff;font-weight:800;font-size:18px;
+  }
+  header.top h1{font-size:16px;margin:0;font-weight:700;letter-spacing:-.01em}
+  header.top p{margin:0;font-size:12px;color:var(--muted)}
+  .grow{flex:1}
+  .top-links a{color:var(--ink-soft);font-size:12.5px;text-decoration:none;margin-left:14px}
+  .top-links a:hover{color:var(--brand-ink)}
+
+  .layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px;padding:18px 22px;max-width:1400px;margin:0 auto}
+  @media (max-width:900px){ .layout{grid-template-columns:1fr} }
+
+  .panel{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
+  .panel-head{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--border)}
+  .panel-head h2{font-size:13px;margin:0;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:700}
+  .panel-body{padding:16px}
+
+  label.lbl{display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin:0 0 5px}
+  .req{color:var(--danger);margin-left:3px}
+  .hint{font-size:11.5px;color:var(--muted);margin-top:3px}
+  select,input,textarea{
+    width:100%;padding:9px 11px;font-size:13.5px;color:var(--ink);background:var(--panel-2);
+    border:1px solid var(--border);border-radius:9px;font-family:inherit;outline:none;transition:border-color .12s, box-shadow .12s;
+  }
+  select:focus,input:focus,textarea:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft)}
+  textarea{min-height:74px;resize:vertical}
+  .field{margin-bottom:14px}
+  .field.missing input,.field.missing textarea,.field.missing select{border-color:var(--warn)}
+
+  .type-picker{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-bottom:4px}
+  .type-picker .field{margin-bottom:0;flex:1;min-width:220px}
+
+  fieldset.group{
+    border:1px dashed var(--border);border-radius:10px;padding:12px 12px 4px;margin:0 0 14px;background:var(--panel-2);
+  }
+  fieldset.group>legend{font-size:11.5px;font-weight:700;color:var(--brand-ink);padding:0 6px;text-transform:uppercase;letter-spacing:.05em}
+
+  .list-item{border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:10px;background:var(--panel)}
+  .list-item .li-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+  .li-head span{font-size:12px;font-weight:700;color:var(--ink-soft)}
+  .string-row{display:flex;gap:8px;margin-bottom:8px}
+
+  .checks{display:flex;flex-wrap:wrap;gap:8px 14px;margin:2px 0 2px}
+  .checks label{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink-soft);font-weight:500;cursor:pointer}
+  .checks input{width:auto}
+
+  button{font-family:inherit;cursor:pointer;border:0;border-radius:8px;font-weight:600;transition:filter .12s, background .12s}
+  button:active{transform:translateY(1px)}
+  .btn{background:var(--brand);color:#fff;padding:9px 14px;font-size:13px}
+  .btn:hover{filter:brightness(1.06)}
+  .btn.ghost{background:var(--brand-soft);color:var(--brand-ink)}
+  .btn.sm{padding:6px 10px;font-size:12px}
+  .btn.mini{padding:4px 9px;font-size:11.5px;background:var(--panel-2);color:var(--ink-soft);border:1px solid var(--border)}
+  .btn.mini:hover{border-color:var(--brand);color:var(--brand-ink)}
+  .btn.danger{background:transparent;color:var(--danger);border:1px solid var(--border);padding:4px 9px;font-size:11.5px}
+  .btn.danger:hover{border-color:var(--danger);background:rgba(239,68,68,.08)}
+
+  .toolbar{display:flex;flex-wrap:wrap;gap:8px;padding:12px 16px;border-bottom:1px solid var(--border);align-items:center}
+  .out-wrap{position:relative}
+  pre.code{margin:0;padding:16px;background:var(--code-bg);color:var(--code-punc);font-size:12.5px;line-height:1.55;
+    overflow:auto;max-height:62vh;border-bottom-left-radius:var(--radius);border-bottom-right-radius:var(--radius);
+    font-family:"SF Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  pre.code .key{color:var(--code-key)} pre.code .str{color:var(--code-str)}
+  pre.code .num{color:var(--code-num)} pre.code .bool{color:var(--code-bool)}
+  pre.code .null{color:var(--code-null)}
+  .copied-toast{position:absolute;top:10px;right:12px;background:var(--ok);color:#fff;font-size:12px;font-weight:600;
+    padding:5px 11px;border-radius:7px;opacity:0;transform:translateY(-4px);transition:.18s;pointer-events:none}
+  .copied-toast.show{opacity:1;transform:none}
+
+  .meta{padding:12px 16px;font-size:12.5px;border-top:1px solid var(--border)}
+  .meta .row{display:flex;gap:8px;align-items:flex-start;margin-bottom:6px}
+  .pill{font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:20px;text-transform:uppercase;letter-spacing:.04em;flex:none;margin-top:1px}
+  .pill.req{background:rgba(239,68,68,.12);color:var(--danger)}
+  .pill.ok{background:rgba(16,185,129,.14);color:var(--ok)}
+  .pill.rec{background:var(--brand-soft);color:var(--brand-ink)}
+  .desc{font-size:12.5px;color:var(--muted);margin:0 0 14px}
+  .desc a{color:var(--brand-ink)}
+  .stack-tip{font-size:12px;color:var(--ink-soft);background:var(--brand-soft);border-radius:8px;padding:8px 11px;margin-top:10px}
+  .stack-tip b{color:var(--brand-ink)}
+  code.inline{background:var(--panel-2);border:1px solid var(--border);padding:1px 5px;border-radius:5px;font-size:12px}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="logo">{ }</div>
+  <div>
+    <h1>Schema Markup Generator</h1>
+    <p>Valid JSON-LD structured data for 40+ Schema.org types</p>
+  </div>
+  <div class="grow"></div>
+  <div class="top-links">
+    <a href="https://validator.schema.org" target="_blank" rel="noopener">Schema Validator ↗</a>
+    <a href="https://search.google.com/test/rich-results" target="_blank" rel="noopener">Rich Results Test ↗</a>
+  </div>
+</header>
+
+<div class="layout">
+  <!-- ===================== FORM PANEL ===================== -->
+  <section class="panel">
+    <div class="panel-head"><h2>1 · Choose type &amp; enter details</h2></div>
+    <div class="panel-body">
+      <div class="type-picker">
+        <div class="field">
+          <label class="lbl" for="schemaType">Schema type</label>
+          <select id="schemaType"></select>
+        </div>
+        <button class="btn ghost sm" id="exampleBtn" title="Fill with placeholder example values">Fill example</button>
+        <button class="btn mini" id="resetBtn" title="Clear all fields">Reset</button>
+      </div>
+      <p class="desc" id="typeDesc"></p>
+      <form id="schemaForm" autocomplete="off" onsubmit="return false"></form>
+      <div class="stack-tip" id="stackTip"></div>
+    </div>
+  </section>
+
+  <!-- ===================== OUTPUT PANEL ===================== -->
+  <section class="panel">
+    <div class="panel-head"><h2>2 · Copy your JSON-LD</h2></div>
+    <div class="toolbar">
+      <button class="btn sm" id="copyBtn">Copy JSON-LD</button>
+      <button class="btn ghost sm" id="copyScriptBtn">Copy as &lt;script&gt;</button>
+      <button class="btn mini" id="downloadBtn">Download .json</button>
+      <label class="checks" style="margin-left:auto"><input type="checkbox" id="wrapScript"> Show &lt;script&gt; wrapper</label>
+    </div>
+    <div class="out-wrap">
+      <div class="copied-toast" id="toast">Copied!</div>
+      <pre class="code" id="output"></pre>
+    </div>
+    <div class="meta" id="fieldMeta"></div>
+    <div class="meta">
+      ✅ <b>Validate your schema:</b>
+      <a href="https://validator.schema.org" target="_blank" rel="noopener">Schema.org Validator</a> ·
+      <a href="https://search.google.com/test/rich-results" target="_blank" rel="noopener">Google Rich Results Test</a>
+      <div class="hint" style="margin-top:6px">Place the output inside a <code class="inline">&lt;script type="application/ld+json"&gt;</code> tag in your page's <code class="inline">&lt;head&gt;</code>.</div>
+    </div>
+  </section>
+</div>
+
+<script>
+/* =========================================================================
+   Schema Markup Generator
+   Data-driven JSON-LD builder based on the SEO Schema Builder skill
+   (Schema.org v30.0). Add a new type by appending to SCHEMAS below.
+   ========================================================================= */
+
+/* ---------- field helper builders (reduce config verbosity) ---------- */
+const f = {
+  text:(name,label,o={})=>({name,label,type:'text',...o}),
+  area:(name,label,o={})=>({name,label,type:'textarea',...o}),
+  url:(name,label,o={})=>({name,label,type:'url',...o}),
+  email:(name,label,o={})=>({name,label,type:'email',...o}),
+  tel:(name,label,o={})=>({name,label,type:'tel',...o}),
+  num:(name,label,o={})=>({name,label,type:'number',...o}),
+  date:(name,label,o={})=>({name,label,type:'date',...o}),
+  dt:(name,label,o={})=>({name,label,type:'datetime',...o}),
+  time:(name,label,o={})=>({name,label,type:'time',...o}),
+  select:(name,label,options,o={})=>({name,label,type:'select',options,...o}),
+  strlist:(name,label,o={})=>({name,label,type:'stringlist',...o}),
+  obj:(name,label,typeValue,fields,o={})=>({name,label,type:'object',typeValue,fields,...o}),
+  list:(name,label,itemType,fields,o={})=>({name,label,type:'objectlist',itemType,fields,...o}),
+  multi:(name,label,options,o={})=>({name,label,type:'multiselect',options,...o}),
+};
+
+/* ---------- enum option sets ---------- */
+const AVAILABILITY = ['InStock','OutOfStock','PreOrder','BackOrder','OnlineOnly','InStoreOnly','LimitedAvailability','SoldOut','Discontinued']
+  .map(v=>({value:'https://schema.org/'+v,label:v}));
+const CONDITION = ['NewCondition','UsedCondition','RefurbishedCondition','DamagedCondition']
+  .map(v=>({value:'https://schema.org/'+v,label:v.replace('Condition','')}));
+const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'].map(v=>({value:v,label:v.slice(0,3)}));
+const EMPLOYMENT = ['FULL_TIME','PART_TIME','CONTRACTOR','TEMPORARY','INTERN','VOLUNTEER','PER_DIEM','OTHER'].map(v=>({value:v,label:v.replace('_',' ')}));
+const ATTEND_MODE = ['OfflineEventAttendanceMode','OnlineEventAttendanceMode','MixedEventAttendanceMode'].map(v=>({value:'https://schema.org/'+v,label:v.replace('EventAttendanceMode','')}));
+const EVENT_STATUS = ['EventScheduled','EventCancelled','EventPostponed','EventRescheduled','EventMovedOnline'].map(v=>({value:'https://schema.org/'+v,label:v.replace('Event','')}));
+const APP_CATEGORY = ['BusinessApplication','GameApplication','SocialNetworkingApplication','ShoppingApplication','TravelApplication','EducationApplication','HealthApplication','FinanceApplication','ProductivityApplication','DeveloperApplication','MultimediaApplication'].map(v=>({value:v,label:v.replace('Application','')}));
+const BOOK_FORMAT = ['Paperback','Hardcover','EBook','AudiobookFormat','GraphicNovel'].map(v=>({value:'https://schema.org/'+v,label:v}));
+const CURRENCIES = ['USD','EUR','GBP','MYR','SGD','AUD','CAD','INR','JPY','CNY','AED'];
+
+/* ---------- reusable field groups ---------- */
+const addressFields = [
+  f.text('streetAddress','Street address',{placeholder:'123 Main St'}),
+  f.text('addressLocality','City',{placeholder:'Kuala Lumpur'}),
+  f.text('addressRegion','State / region',{placeholder:'WP'}),
+  f.text('postalCode','Postal code',{placeholder:'50000'}),
+  f.text('addressCountry','Country code',{placeholder:'US',hint:'2-letter ISO code, e.g. US, MY, GB'}),
+];
+const postalAddress = (req=false)=>f.obj('address','Address','PostalAddress',addressFields,{required:req});
+const geoField = f.obj('geo','Geo coordinates','GeoCoordinates',[
+  f.num('latitude','Latitude',{step:'any'}), f.num('longitude','Longitude',{step:'any'})
+]);
+const logoField = f.obj('logo','Logo','ImageObject',[
+  f.url('url','Logo URL',{placeholder:'https://example.com/logo.png'}),
+  f.num('width','Width (px)'), f.num('height','Height (px)')
+]);
+const aggregateRating = f.obj('aggregateRating','Aggregate rating','AggregateRating',[
+  f.text('ratingValue','Rating value',{placeholder:'4.5'}),
+  f.num('reviewCount','Review count',{placeholder:'89'}),
+  f.num('ratingCount','Rating count'),
+  f.text('bestRating','Best rating',{placeholder:'5'}),
+],{hint:'Fill this to get star ratings in search results'});
+const priceCurrency = f.select('priceCurrency','Currency',CURRENCIES.map(c=>({value:c,label:c})),{placeholder:'Select currency'});
+const offerField = (req=false)=>f.obj('offers','Offer / price','Offer',[
+  f.url('url','Product / offer URL'),
+  f.text('price','Price',{placeholder:'99.00',required:req}),
+  priceCurrency,
+  f.date('priceValidUntil','Price valid until'),
+  f.select('availability','Availability',AVAILABILITY),
+  f.select('itemCondition','Condition',CONDITION),
+  f.obj('seller','Seller','Organization',[f.text('name','Seller name')]),
+],{required:req});
+const authorPerson = f.obj('author','Author','Person',[
+  f.text('name','Author name',{placeholder:'Jane Doe'}), f.url('url','Author profile URL')
+]);
+const publisherOrg = f.obj('publisher','Publisher','Organization',[
+  f.text('name','Publisher name'),
+  f.obj('logo','Publisher logo','ImageObject',[f.url('url','Logo URL')]),
+]);
+
+/* ============================ SCHEMA DEFINITIONS ============================ */
+const SCHEMAS = [
+/* ---- SECTION 1: Business & Identity ---- */
+{
+  type:'Organization', category:'Business & Identity',
+  desc:'The identity of a company, brand, or org. Pair with WebSite on your homepage.',
+  stack:'Homepage stack: Organization + WebSite + BreadcrumbList',
+  fields:[
+    f.text('@id','@id (canonical anchor)',{placeholder:'https://example.com/#organization',hint:'Unique node id — helps entity disambiguation'}),
+    f.text('name','Organization name',{required:true,placeholder:'Acme Inc'}),
+    f.url('url','Website URL',{placeholder:'https://example.com'}),
+    logoField,
+    f.area('description','Description'),
+    f.email('email','Email'), f.tel('telephone','Telephone',{placeholder:'+1-555-123-4567'}),
+    postalAddress(),
+    f.strlist('sameAs','Social / profile URLs',{placeholder:'https://facebook.com/...',hint:'Facebook, LinkedIn, X, Instagram, Wikipedia…'}),
+    f.text('foundingDate','Founding date',{placeholder:'2010'}),
+  ]
+},
+{
+  type:'LocalBusiness', category:'Business & Identity',
+  typeOptions:['LocalBusiness','Restaurant','Store','MedicalClinic','Hotel','LegalService','AccountingService','AutoRepair','HealthClub','RealEstateAgent','ProfessionalService','BeautySalon','Dentist'].map(v=>({value:v,label:v})),
+  desc:'A physical business with a location. Powers the local/maps knowledge panel.',
+  stack:'Local stack: LocalBusiness + OpeningHoursSpecification + Review',
+  fields:[
+    f.text('@id','@id',{placeholder:'https://example.com/#localbusiness'}),
+    f.text('name','Business name',{required:true}),
+    f.url('image','Image URL'),
+    f.url('url','Website URL'),
+    f.tel('telephone','Telephone',{placeholder:'+60-3-1234-5678'}),
+    f.text('priceRange','Price range',{placeholder:'$$'}),
+    postalAddress(true),
+    geoField,
+    f.list('openingHoursSpecification','Opening hours','OpeningHoursSpecification',[
+      f.multi('dayOfWeek','Days',DAYS),
+      f.time('opens','Opens'), f.time('closes','Closes')
+    ],{itemLabel:'Hours'}),
+    f.url('hasMap','Google Maps URL'),
+    aggregateRating,
+  ]
+},
+{
+  type:'Person', category:'Business & Identity',
+  desc:'An individual — author, founder, team member, public figure.',
+  fields:[
+    f.text('@id','@id',{placeholder:'https://example.com/#person'}),
+    f.text('name','Full name',{required:true}),
+    f.text('jobTitle','Job title'),
+    f.url('url','Profile URL'), f.url('image','Photo URL'),
+    f.email('email','Email'), f.area('description','Bio'),
+    f.strlist('sameAs','Social / profile URLs'),
+    f.obj('worksFor','Works for','Organization',[f.text('name','Employer name')]),
+  ]
+},
+{
+  type:'WebSite', category:'Business & Identity',
+  desc:'Your site as an entity. Enables the Sitelinks Search Box in Google.',
+  fields:[
+    f.text('@id','@id',{placeholder:'https://example.com/#website'}),
+    f.text('name','Site name',{required:true}),
+    f.url('url','Site URL',{required:true}),
+    f.area('description','Description'),
+    f.obj('potentialAction','Sitelinks search box','SearchAction',[
+      f.obj('target','Search endpoint','EntryPoint',[
+        f.text('urlTemplate','Search URL template',{placeholder:'https://example.com/search?q={search_term_string}'})
+      ]),
+      {name:'query-input',type:'const',value:'required name=search_term_string'}
+    ]),
+  ]
+},
+{
+  type:'WebPage', category:'Business & Identity',
+  typeOptions:['WebPage','AboutPage','ContactPage','ProfilePage','CollectionPage','CheckoutPage','FAQPage','ItemPage'].map(v=>({value:v,label:v})),
+  desc:'A single page. Use the subtype (AboutPage, ContactPage…) that matches its purpose.',
+  fields:[
+    f.text('@id','@id',{placeholder:'https://example.com/about#webpage'}),
+    f.text('name','Page title',{required:true}),
+    f.url('url','Page URL'),
+    f.area('description','Description'),
+    f.date('datePublished','Date published'),
+    f.date('dateModified','Date modified'),
+    f.text('inLanguage','Language',{placeholder:'en'}),
+  ]
+},
+
+/* ---- SECTION 2: E-commerce & Products ---- */
+{
+  type:'Product', category:'E-commerce & Products',
+  desc:'A product for sale. Add offers for price and aggregateRating for review stars.',
+  stack:'Product stack: Product + Offer + AggregateRating + BreadcrumbList',
+  fields:[
+    f.text('name','Product name',{required:true}),
+    f.strlist('image','Image URLs',{required:true,placeholder:'https://example.com/photo.jpg'}),
+    f.area('description','Description'),
+    f.text('sku','SKU'), f.text('mpn','MPN'),
+    f.obj('brand','Brand','Brand',[f.text('name','Brand name')]),
+    offerField(true),
+    aggregateRating,
+    f.list('review','Reviews','Review',[
+      f.text('author','Reviewer name'),
+      f.text('ratingValue','Rating (1-5)',{placeholder:'5'}),
+      f.area('reviewBody','Review text'),
+      f.date('datePublished','Date'),
+    ],{itemLabel:'Review', reviewItem:true}),
+  ]
+},
+{
+  type:'Offer', category:'E-commerce & Products',
+  desc:'A standalone price offer for an item or service.',
+  fields:[
+    f.text('name','Offer name'),
+    f.url('url','URL'),
+    f.text('price','Price',{required:true,placeholder:'49.00'}),
+    priceCurrency,
+    f.date('priceValidUntil','Price valid until'),
+    f.select('availability','Availability',AVAILABILITY),
+    f.select('itemCondition','Condition',CONDITION),
+  ]
+},
+{
+  type:'Review', category:'E-commerce & Products',
+  desc:'A single review of a business, product, or service.',
+  fields:[
+    f.obj('itemReviewed','Item reviewed','LocalBusiness',[f.text('name','Item / business name')]),
+    f.obj('reviewRating','Rating','Rating',[
+      f.text('ratingValue','Rating value',{required:true,placeholder:'5'}),
+      f.text('bestRating','Best rating',{placeholder:'5'}),
+      f.text('worstRating','Worst rating',{placeholder:'1'}),
+    ]),
+    f.obj('author','Author','Person',[f.text('name','Reviewer name')]),
+    f.area('reviewBody','Review text'),
+    f.date('datePublished','Date published'),
+  ]
+},
+
+/* ---- SECTION 3: Content & Publishing ---- */
+{
+  type:'Article', category:'Content & Publishing',
+  typeOptions:['Article','BlogPosting','NewsArticle','TechArticle'].map(v=>({value:v,label:v})),
+  desc:'A written article, blog post, or news story.',
+  stack:'Blog stack: Article + BreadcrumbList + Person (author)',
+  fields:[
+    f.text('headline','Headline',{required:true}),
+    f.strlist('image','Image URLs',{placeholder:'https://example.com/featured.jpg'}),
+    authorPerson,
+    publisherOrg,
+    f.dt('datePublished','Date published'),
+    f.dt('dateModified','Date modified'),
+    f.area('description','Description'),
+    f.obj('mainEntityOfPage','Main entity of page','WebPage',[f.text('@id','Page URL')]),
+    f.num('wordCount','Word count'),
+    f.text('inLanguage','Language',{placeholder:'en'}),
+  ]
+},
+{
+  type:'BreadcrumbList', category:'Content & Publishing',
+  desc:'The navigation path to this page. One of the highest-impact schemas for CTR — add it to every page.',
+  fields:[
+    f.list('itemListElement','Breadcrumb items','ListItem',[
+      f.text('name','Name',{placeholder:'Home',required:true}),
+      f.url('item','URL',{placeholder:'https://example.com'}),
+    ],{itemLabel:'Crumb', min:2, autoPosition:true}),
+  ]
+},
+
+/* ---- SECTION 4: Rich Results Powerhouses ---- */
+{
+  type:'FAQPage', category:'Rich Results',
+  desc:'Question & answer pairs. All Q&As must be visible on the page.',
+  fields:[
+    f.list('mainEntity','Questions & answers','Question',[
+      f.text('name','Question',{placeholder:'What is…?',required:true}),
+      f.obj('acceptedAnswer','Answer','Answer',[f.area('text','Answer text',{required:true})]),
+    ],{itemLabel:'Q&A', min:2}),
+  ]
+},
+{
+  type:'HowTo', category:'Rich Results',
+  desc:'Step-by-step instructions to accomplish a task.',
+  fields:[
+    f.text('name','Title',{required:true,placeholder:'How to tie a tie'}),
+    f.area('description','Description'),
+    f.url('image','Featured image URL'),
+    f.text('totalTime','Total time',{placeholder:'PT30M',hint:'ISO 8601 duration: PT30M = 30 min, PT1H30M = 1.5 h'}),
+    f.obj('estimatedCost','Estimated cost','MonetaryAmount',[
+      f.select('currency','Currency',CURRENCIES.map(c=>({value:c,label:c}))),
+      f.text('value','Amount',{placeholder:'0'})
+    ]),
+    f.list('supply','Supplies','HowToSupply',[f.text('name','Supply name')],{itemLabel:'Supply'}),
+    f.list('tool','Tools','HowToTool',[f.text('name','Tool name')],{itemLabel:'Tool'}),
+    f.list('step','Steps','HowToStep',[
+      f.text('name','Step title'),
+      f.area('text','Step description',{required:true}),
+      f.url('image','Step image URL'),
+      f.url('url','Step anchor URL'),
+    ],{itemLabel:'Step', min:2}),
+  ]
+},
+{
+  type:'Recipe', category:'Rich Results',
+  desc:'A cooking recipe. Add aggregateRating and video for the richest results.',
+  fields:[
+    f.text('name','Recipe name',{required:true}),
+    f.strlist('image','Image URLs',{required:true}),
+    f.obj('author','Author','Person',[f.text('name','Author name')]),
+    f.date('datePublished','Date published'),
+    f.area('description','Description'),
+    f.text('prepTime','Prep time',{placeholder:'PT15M'}),
+    f.text('cookTime','Cook time',{placeholder:'PT30M'}),
+    f.text('totalTime','Total time',{placeholder:'PT45M'}),
+    f.text('keywords','Keywords'),
+    f.text('recipeYield','Yield',{placeholder:'4 servings'}),
+    f.text('recipeCategory','Category',{placeholder:'Dinner'}),
+    f.text('recipeCuisine','Cuisine',{placeholder:'Malaysian'}),
+    f.obj('nutrition','Nutrition','NutritionInformation',[f.text('calories','Calories',{placeholder:'350 calories'})]),
+    f.strlist('recipeIngredient','Ingredients',{placeholder:'2 cups flour'}),
+    f.list('recipeInstructions','Instructions','HowToStep',[
+      f.text('name','Step name'),
+      f.area('text','Step description',{required:true}),
+      f.url('url','Step anchor URL'),
+      f.url('image','Step image URL'),
+    ],{itemLabel:'Step', min:1}),
+    aggregateRating,
+    f.obj('video','Video','VideoObject',[
+      f.text('name','Video name'), f.area('description','Video description'),
+      f.url('thumbnailUrl','Thumbnail URL'), f.url('contentUrl','Video file URL'),
+      f.url('embedUrl','Embed URL'), f.date('uploadDate','Upload date'),
+    ]),
+  ]
+},
+{
+  type:'VideoObject', category:'Rich Results',
+  desc:'A video. Required for video rich results and Google video search.',
+  fields:[
+    f.text('name','Title',{required:true}),
+    f.area('description','Description',{required:true}),
+    f.strlist('thumbnailUrl','Thumbnail URLs',{required:true}),
+    f.dt('uploadDate','Upload date',{required:true}),
+    f.text('duration','Duration',{placeholder:'PT5M30S'}),
+    f.url('contentUrl','Video file URL'),
+    f.url('embedUrl','Embed URL'),
+    publisherOrg,
+  ]
+},
+
+/* ---- SECTION 5: Local & Events ---- */
+{
+  type:'Event', category:'Local & Events',
+  desc:'A scheduled event — concert, webinar, conference, class.',
+  fields:[
+    f.text('name','Event name',{required:true}),
+    f.dt('startDate','Start date/time',{required:true}),
+    f.dt('endDate','End date/time'),
+    f.select('eventAttendanceMode','Attendance mode',ATTEND_MODE),
+    f.select('eventStatus','Status',EVENT_STATUS),
+    f.obj('location','Location','Place',[
+      f.text('name','Venue name'),
+      postalAddress(),
+    ]),
+    f.strlist('image','Image URLs'),
+    f.area('description','Description'),
+    f.obj('offers','Tickets / offer','Offer',[
+      f.url('url','Ticket URL'), f.text('price','Price',{placeholder:'50'}),
+      priceCurrency, f.select('availability','Availability',AVAILABILITY),
+      f.dt('validFrom','Valid from'),
+    ]),
+    f.obj('organizer','Organizer','Organization',[f.text('name','Organizer name'), f.url('url','Organizer URL')]),
+  ]
+},
+
+/* ---- SECTION 6: Professional & Jobs ---- */
+{
+  type:'JobPosting', category:'Professional & Jobs',
+  desc:'A job listing. Eligible for the Google Jobs experience.',
+  stack:'Job stack: JobPosting + Organization (hiringOrganization)',
+  fields:[
+    f.text('title','Job title',{required:true}),
+    f.area('description','Description (HTML allowed)',{required:true}),
+    f.obj('hiringOrganization','Hiring organization','Organization',[
+      f.text('name','Company name',{required:true}), f.url('sameAs','Company URL'), f.url('logo','Logo URL'),
+    ]),
+    f.obj('jobLocation','Job location','Place',[postalAddress()]),
+    f.date('datePosted','Date posted',{required:true}),
+    f.dt('validThrough','Valid through'),
+    f.select('employmentType','Employment type',EMPLOYMENT),
+    f.obj('baseSalary','Base salary','MonetaryAmount',[
+      f.select('currency','Currency',CURRENCIES.map(c=>({value:c,label:c}))),
+      f.obj('value','Amount','QuantitativeValue',[
+        f.num('minValue','Min'), f.num('maxValue','Max'),
+        f.select('unitText','Per',['HOUR','DAY','WEEK','MONTH','YEAR'].map(v=>({value:v,label:v})))
+      ])
+    ]),
+    f.select('jobLocationType','Location type',[{value:'TELECOMMUTE',label:'Remote (TELECOMMUTE)'}]),
+  ]
+},
+{
+  type:'Course', category:'Professional & Jobs',
+  desc:'An educational course.',
+  fields:[
+    f.text('name','Course name',{required:true}),
+    f.area('description','Description',{required:true}),
+    f.obj('provider','Provider','Organization',[f.text('name','Provider name'), f.url('sameAs','Provider URL')]),
+    f.url('url','Course URL'), f.url('image','Image URL'),
+    f.text('courseCode','Course code'),
+    f.text('educationalLevel','Level',{placeholder:'Beginner'}),
+    f.obj('offers','Offer','Offer',[f.text('price','Price',{placeholder:'299'}), priceCurrency, f.select('availability','Availability',AVAILABILITY)]),
+  ]
+},
+
+/* ---- SECTION 7: Media & Entertainment ---- */
+{
+  type:'Book', category:'Media & Entertainment',
+  desc:'A book. Add offers and aggregateRating for shopping/review enhancements.',
+  fields:[
+    f.text('name','Title',{required:true}),
+    f.obj('author','Author','Person',[f.text('name','Author name')]),
+    f.text('isbn','ISBN-13'),
+    f.num('numberOfPages','Pages'),
+    f.select('bookFormat','Format',BOOK_FORMAT),
+    f.obj('publisher','Publisher','Organization',[f.text('name','Publisher name')]),
+    f.date('datePublished','Date published'),
+    f.url('image','Cover image URL'),
+    f.area('description','Description'),
+    f.text('inLanguage','Language',{placeholder:'en'}),
+    aggregateRating,
+    f.obj('offers','Offer','Offer',[f.text('price','Price'), priceCurrency, f.select('availability','Availability',AVAILABILITY)]),
+  ]
+},
+{
+  type:'Movie', category:'Media & Entertainment',
+  desc:'A film or movie.',
+  fields:[
+    f.text('name','Title',{required:true}),
+    f.url('image','Poster image URL'),
+    f.date('dateCreated','Release date'),
+    f.obj('director','Director','Person',[f.text('name','Director name')]),
+    f.text('duration','Duration',{placeholder:'PT2H10M'}),
+    f.strlist('genre','Genres'),
+    f.area('description','Description'),
+    aggregateRating,
+  ]
+},
+{
+  type:'MusicRecording', category:'Media & Entertainment',
+  desc:'A song or music recording.',
+  fields:[
+    f.text('name','Track title',{required:true}),
+    f.obj('byArtist','Artist','MusicGroup',[f.text('name','Artist name')]),
+    f.obj('inAlbum','Album','MusicAlbum',[f.text('name','Album name')]),
+    f.text('duration','Duration',{placeholder:'PT3M45S'}),
+    f.url('image','Cover art URL'),
+  ]
+},
+{
+  type:'AudioObject', category:'Media & Entertainment',
+  desc:'An audio file — podcast episode, recording.',
+  fields:[
+    f.text('name','Title',{required:true}),
+    f.area('description','Description'),
+    f.url('contentUrl','Audio file URL'),
+    f.url('embedUrl','Embed URL'),
+    f.dt('uploadDate','Upload date'),
+    f.text('duration','Duration',{placeholder:'PT25M'}),
+  ]
+},
+
+/* ---- SECTION 8: Technical & Web ---- */
+{
+  type:'SoftwareApplication', category:'Technical & Web',
+  typeOptions:['SoftwareApplication','WebApplication','MobileApplication'].map(v=>({value:v,label:v})),
+  desc:'An app or software product. aggregateRating + offers enable app rich results.',
+  fields:[
+    f.text('name','App name',{required:true}),
+    f.text('operatingSystem','Operating system',{placeholder:'Android, iOS'}),
+    f.select('applicationCategory','Category',APP_CATEGORY),
+    aggregateRating,
+    f.obj('offers','Offer / price','Offer',[f.text('price','Price',{placeholder:'0'}), priceCurrency]),
+    f.area('description','Description'),
+    f.url('url','App URL'), f.url('image','Icon URL'),
+    f.text('softwareVersion','Version',{placeholder:'2.1.0'}),
+    f.url('downloadUrl','Download URL'),
+    f.url('screenshot','Screenshot URL'),
+  ]
+},
+{
+  type:'Dataset', category:'Technical & Web',
+  desc:'A published dataset (Google Dataset Search).',
+  fields:[
+    f.text('name','Dataset name',{required:true}),
+    f.area('description','Description',{required:true}),
+    f.url('url','Dataset URL'),
+    f.strlist('keywords','Keywords'),
+    f.text('license','License URL'),
+    f.obj('creator','Creator','Organization',[f.text('name','Creator name')]),
+  ]
+},
+
+/* ---- SECTION 9: Specialized ---- */
+{
+  type:'Physician', category:'Specialized',
+  typeOptions:['Physician','MedicalClinic','Hospital','MedicalOrganization','Dentist'].map(v=>({value:v,label:v})),
+  desc:'A doctor, clinic, or medical organization.',
+  fields:[
+    f.text('name','Name',{required:true,placeholder:'Dr. Jane Doe'}),
+    f.url('image','Photo URL'),
+    f.area('description','Bio'),
+    f.text('medicalSpecialty','Specialty',{placeholder:'https://schema.org/GeneralPractice'}),
+    postalAddress(),
+    f.tel('telephone','Telephone'),
+    f.url('url','Profile URL'),
+    f.obj('availableService','Available service','MedicalProcedure',[f.text('name','Service name')]),
+  ]
+},
+{
+  type:'LegalService', category:'Specialized',
+  desc:'A law firm or attorney.',
+  fields:[
+    f.text('name','Firm name',{required:true}),
+    f.url('url','Website URL'), f.tel('telephone','Telephone'),
+    postalAddress(),
+    f.area('description','Description'),
+    f.text('openingHours','Opening hours',{placeholder:'Mo-Fr 09:00-17:00'}),
+    f.text('priceRange','Price range',{placeholder:'$$'}),
+  ]
+},
+{
+  type:'Vehicle', category:'Specialized',
+  desc:'A car or vehicle for sale.',
+  fields:[
+    f.text('name','Vehicle name',{required:true}),
+    f.obj('brand','Brand','Brand',[f.text('name','Brand name')]),
+    f.text('model','Model'),
+    f.text('modelDate','Model year',{placeholder:'2024'}),
+    f.text('vehicleIdentificationNumber','VIN'),
+    f.text('color','Color'),
+    f.obj('mileageFromOdometer','Mileage','QuantitativeValue',[
+      f.num('value','Value'), f.select('unitCode','Unit',[{value:'KMT',label:'km'},{value:'SMI',label:'miles'}])
+    ]),
+    f.obj('offers','Offer','Offer',[f.text('price','Price'), priceCurrency, f.select('availability','Availability',AVAILABILITY)]),
+  ]
+},
+{
+  type:'FinancialProduct', category:'Specialized',
+  desc:'A financial product — loan, credit card, savings account.',
+  fields:[
+    f.text('name','Product name',{required:true}),
+    f.area('description','Description'),
+    f.url('url','URL'),
+    f.obj('provider','Provider','Organization',[f.text('name','Provider name')]),
+    f.obj('interestRate','Interest rate','QuantitativeValue',[f.num('value','Rate (%)',{step:'any'})]),
+  ]
+},
+
+/* ---- SECTION 10: Utility ---- */
+{
+  type:'ImageObject', category:'Utility',
+  desc:'A standalone image with metadata and licensing.',
+  fields:[
+    f.url('contentUrl','Image URL',{required:true}),
+    f.url('url','Page/image URL'),
+    f.text('name','Name'),
+    f.text('caption','Caption'),
+    f.num('width','Width (px)'), f.num('height','Height (px)'),
+    f.obj('author','Author','Person',[f.text('name','Photographer')]),
+    f.obj('copyrightHolder','Copyright holder','Organization',[f.text('name','Company')]),
+  ]
+},
+];
+
+/* ============================ RENDERING ENGINE ============================ */
+const el = (tag,cls,txt)=>{const e=document.createElement(tag); if(cls)e.className=cls; if(txt!=null)e.textContent=txt; return e;};
+const typeSelect = document.getElementById('schemaType');
+const form = document.getElementById('schemaForm');
+const output = document.getElementById('output');
+const typeDesc = document.getElementById('typeDesc');
+const stackTip = document.getElementById('stackTip');
+const fieldMeta = document.getElementById('fieldMeta');
+
+let current = null;   // current schema def
+let state = {};       // current form state
+
+/* populate the type dropdown, grouped by category */
+(function buildTypeMenu(){
+  const cats = {};
+  SCHEMAS.forEach((s,i)=>{ (cats[s.category] ||= []).push({s,i}); });
+  Object.entries(cats).forEach(([cat,items])=>{
+    const og = el('optgroup'); og.label = cat;
+    items.forEach(({s,i})=>{ const o=el('option'); o.value=i; o.textContent=s.type; og.appendChild(o); });
+    typeSelect.appendChild(og);
+  });
+})();
+
+function initObject(fields){
+  const o = {};
+  fields.forEach(fl=>{
+    if(fl.type==='object') o[fl.name]=initObject(fl.fields);
+    else if(fl.type==='objectlist') o[fl.name]=Array.from({length:fl.min||0},()=>initObject(fl.fields));
+    else if(fl.type==='stringlist') o[fl.name]=Array.from({length:Math.max(1,fl.min||0)},()=>'');
+    else if(fl.type==='multiselect') o[fl.name]=[];
+    else if(fl.type==='const') {/* not stored */}
+    else o[fl.name]='';
+  });
+  return o;
+}
+
+function loadType(idx){
+  current = SCHEMAS[idx];
+  state = initObject(current.fields);
+  if(current.typeOptions) state['@type'] = current.typeOptions[0].value;
+  typeDesc.innerHTML = current.desc + ` &nbsp;·&nbsp; <a href="https://schema.org/${current.type}" target="_blank" rel="noopener">schema.org/${current.type} ↗</a>`;
+  stackTip.style.display = current.stack ? 'block':'none';
+  if(current.stack) stackTip.innerHTML = '💡 <b>Tip:</b> ' + current.stack;
+  renderForm();
+}
+
+function renderForm(){
+  form.innerHTML='';
+  if(current.typeOptions){
+    const wrap = el('div','field');
+    wrap.appendChild(Object.assign(el('label','lbl'),{textContent:'Specific @type'}));
+    const sel = el('select');
+    current.typeOptions.forEach(op=>{ const o=el('option'); o.value=op.value; o.textContent=op.label; if(op.value===state['@type'])o.selected=true; sel.appendChild(o); });
+    sel.addEventListener('change',()=>{ state['@type']=sel.value; updateOutput(); });
+    wrap.appendChild(sel);
+    form.appendChild(wrap);
+  }
+  renderFields(current.fields, state, form);
+  updateOutput();
+}
+
+function renderFields(fields, data, container){
+  fields.forEach(fl=>{
+    if(fl.type==='const') return;
+    if(fl.type==='object'){ container.appendChild(renderObject(fl,data)); return; }
+    if(fl.type==='objectlist'){ container.appendChild(renderObjectList(fl,data)); return; }
+    if(fl.type==='stringlist'){ container.appendChild(renderStringList(fl,data)); return; }
+    if(fl.type==='multiselect'){ container.appendChild(renderMultiSelect(fl,data)); return; }
+    container.appendChild(renderScalar(fl,data));
+  });
+}
+
+function labelEl(fl){
+  const l = el('label','lbl'); l.textContent = fl.label;
+  if(fl.required){ const s=el('span','req','*'); l.appendChild(s); }
+  return l;
+}
+
+function renderScalar(fl,data){
+  const wrap = el('div','field'); wrap.appendChild(labelEl(fl));
+  let inp;
+  if(fl.type==='textarea'){ inp=el('textarea'); }
+  else if(fl.type==='select'){
+    inp=el('select');
+    inp.appendChild(Object.assign(el('option'),{value:'',textContent:'— none —'}));
+    fl.options.forEach(op=>{ const o=el('option'); o.value=op.value; o.textContent=op.label; inp.appendChild(o); });
+  } else {
+    inp=el('input');
+    inp.type = ({url:'url',email:'email',tel:'tel',number:'number',date:'date',datetime:'datetime-local',time:'time'})[fl.type]||'text';
+    if(fl.step) inp.step=fl.step;
+  }
+  if(fl.placeholder) inp.placeholder=fl.placeholder;
+  inp.value = data[fl.name]??'';
+  inp.addEventListener('input',()=>{ data[fl.name]=inp.value; updateOutput(); });
+  inp.addEventListener('change',()=>{ data[fl.name]=inp.value; updateOutput(); });
+  wrap.appendChild(inp);
+  if(fl.hint) wrap.appendChild(el('div','hint',fl.hint));
+  wrap._field = fl; wrap._data = data;
+  return wrap;
+}
+
+function renderObject(fl,data){
+  const fs = el('fieldset','group');
+  const lg = el('legend'); lg.textContent = fl.label + (fl.required?' *':''); fs.appendChild(lg);
+  if(!data[fl.name]) data[fl.name]=initObject(fl.fields);
+  renderFields(fl.fields, data[fl.name], fs);
+  return fs;
+}
+
+function renderMultiSelect(fl,data){
+  const wrap = el('div','field'); wrap.appendChild(labelEl(fl));
+  const box = el('div','checks');
+  if(!Array.isArray(data[fl.name])) data[fl.name]=[];
+  fl.options.forEach(op=>{
+    const lab = el('label'); const cb=el('input'); cb.type='checkbox'; cb.value=op.value;
+    cb.checked = data[fl.name].includes(op.value);
+    cb.addEventListener('change',()=>{
+      const arr=data[fl.name];
+      if(cb.checked){ if(!arr.includes(op.value)) arr.push(op.value); }
+      else { data[fl.name]=arr.filter(v=>v!==op.value); }
+      updateOutput();
+    });
+    lab.appendChild(cb); lab.appendChild(document.createTextNode(op.label)); box.appendChild(lab);
+  });
+  wrap.appendChild(box);
+  return wrap;
+}
+
+function renderStringList(fl,data){
+  const wrap = el('div','field'); wrap.appendChild(labelEl(fl));
+  if(!Array.isArray(data[fl.name])||!data[fl.name].length) data[fl.name]=[''];
+  data[fl.name].forEach((val,i)=>{
+    const row = el('div','string-row');
+    const inp = el('input'); inp.type='text'; inp.value=val; if(fl.placeholder)inp.placeholder=fl.placeholder;
+    inp.addEventListener('input',()=>{ data[fl.name][i]=inp.value; updateOutput(); });
+    row.appendChild(inp);
+    const rm = el('button','btn danger','✕'); rm.type='button';
+    rm.addEventListener('click',()=>{ data[fl.name].splice(i,1); if(!data[fl.name].length)data[fl.name]=['']; renderForm(); });
+    row.appendChild(rm);
+    wrap.appendChild(row);
+  });
+  const add = el('button','btn mini','+ Add'); add.type='button';
+  add.addEventListener('click',()=>{ data[fl.name].push(''); renderForm(); });
+  wrap.appendChild(add);
+  if(fl.hint) wrap.appendChild(el('div','hint',fl.hint));
+  return wrap;
+}
+
+function renderObjectList(fl,data){
+  const fs = el('fieldset','group');
+  const lg = el('legend'); lg.textContent = fl.label + (fl.required?' *':''); fs.appendChild(lg);
+  if(!Array.isArray(data[fl.name])) data[fl.name]=[];
+  data[fl.name].forEach((item,i)=>{
+    const card = el('div','list-item');
+    const head = el('div','li-head');
+    head.appendChild(el('span',null,`${fl.itemLabel||fl.itemType} ${i+1}`));
+    const rm = el('button','btn danger','Remove'); rm.type='button';
+    rm.addEventListener('click',()=>{ data[fl.name].splice(i,1); renderForm(); });
+    head.appendChild(rm); card.appendChild(head);
+    renderFields(fl.fields, item, card);
+    fs.appendChild(card);
+  });
+  const add = el('button','btn mini',`+ Add ${fl.itemLabel||fl.itemType}`); add.type='button';
+  add.addEventListener('click',()=>{ data[fl.name].push(initObject(fl.fields)); renderForm(); });
+  fs.appendChild(add);
+  return fs;
+}
+
+/* ============================ JSON-LD BUILDER ============================ */
+function buildObject(fields, data, typeValue, opts={}){
+  const out = {};
+  if(typeValue) out['@type']=typeValue;
+  let realCount = 0;
+  fields.forEach(fl=>{
+    if(fl.type==='const'){ out[fl.name]=fl.value; return; } // added but doesn't count as real
+    const v = buildField(fl, data[fl.name]);
+    if(v!==undefined){ out[fl.name]=v; realCount++; }
+  });
+  // reorder so @id (if present as a real field) sits right after @type
+  if(out['@id']!==undefined){
+    const id=out['@id']; delete out['@id'];
+    const rebuilt={}; if(out['@type']!==undefined){rebuilt['@type']=out['@type']; delete out['@type'];}
+    rebuilt['@id']=id; Object.assign(rebuilt,out); return realCount? finalize(rebuilt):undefined;
+  }
+  return realCount ? out : undefined;
+  function finalize(o){ return o; }
+}
+
+function buildField(fl, val){
+  switch(fl.type){
+    case 'object': {
+      const o = buildObject(fl.fields, val||{}, fl.typeValue);
+      return o; // undefined if empty
+    }
+    case 'objectlist': {
+      if(!Array.isArray(val)) return undefined;
+      const arr = [];
+      val.forEach((item,idx)=>{
+        let o;
+        if(fl.reviewItem) o = buildReviewItem(item);
+        else o = buildObject(fl.fields, item, fl.itemType);
+        if(o!==undefined){
+          if(fl.autoPosition) o = {'@type':fl.itemType, position:idx+1, ...stripType(o)};
+          arr.push(o);
+        }
+      });
+      return arr.length? arr : undefined;
+    }
+    case 'stringlist': {
+      if(!Array.isArray(val)) return undefined;
+      const arr = val.map(s=>String(s).trim()).filter(Boolean);
+      return arr.length? arr : undefined;
+    }
+    case 'multiselect': {
+      if(!Array.isArray(val)||!val.length) return undefined;
+      return val.slice();
+    }
+    case 'number': {
+      if(val===''||val==null) return undefined;
+      const n = Number(val); return Number.isFinite(n)? n : String(val);
+    }
+    case 'const': return fl.value;
+    default: {
+      const s = (val==null)?'':String(val).trim();
+      if(!s) return undefined;
+      // normalize datetime-local (YYYY-MM-DDTHH:mm) is already ISO-ish; leave as entered
+      return s;
+    }
+  }
+}
+function stripType(o){ const c={...o}; delete c['@type']; return c; }
+
+/* Product/Review reviews: shorthand author/rating fields -> nested Review */
+function buildReviewItem(item){
+  const out = {'@type':'Review'}; let real=0;
+  if(item.author && String(item.author).trim()){ out.author={'@type':'Person',name:item.author.trim()}; real++; }
+  if(item.ratingValue && String(item.ratingValue).trim()){ out.reviewRating={'@type':'Rating',ratingValue:String(item.ratingValue).trim(),bestRating:'5'}; real++; }
+  if(item.reviewBody && String(item.reviewBody).trim()){ out.reviewBody=item.reviewBody.trim(); real++; }
+  if(item.datePublished && String(item.datePublished).trim()){ out.datePublished=item.datePublished.trim(); real++; }
+  return real? out : undefined;
+}
+
+function buildJSON(){
+  const root = { '@context':'https://schema.org', '@type': current.typeOptions? state['@type'] : current.type };
+  current.fields.forEach(fl=>{
+    if(fl.type==='const'){ root[fl.name]=fl.value; return; }
+    const v = buildField(fl, state[fl.name]);
+    if(v!==undefined) root[fl.name]=v;
+  });
+  // hoist @id to just after @type for readability
+  if(root['@id']!==undefined){
+    const {['@context']:ctx,['@type']:ty,['@id']:id,...rest}=root;
+    return {'@context':ctx,'@type':ty,'@id':id,...rest};
+  }
+  return root;
+}
+
+/* ============================ OUTPUT ============================ */
+function currentJSONString(wrap){
+  const obj = buildJSON();
+  const json = JSON.stringify(obj,null,2);
+  if(wrap) return '<script type="application/ld+json">\n'+json+'\n<\/script>';
+  return json;
+}
+
+function updateOutput(){
+  const wrap = document.getElementById('wrapScript').checked;
+  const json = JSON.stringify(buildJSON(),null,2);
+  output.innerHTML = wrap
+    ? '<span class="null">&lt;script type="application/ld+json"&gt;</span>\n'+highlight(json)+'\n<span class="null">&lt;/script&gt;</span>'
+    : highlight(json);
+  updateMeta();
+}
+
+function highlight(json){
+  json = json.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  return json.replace(/("(?:\\.|[^"\\])*"(\s*:)?|\b(?:true|false)\b|\bnull\b|-?\d+(?:\.\d+)?(?:[eE][+\-]?\d+)?)/g, m=>{
+    let cls='num';
+    if(/^"/.test(m)) cls = /:\s*$/.test(m)?'key':'str';
+    else if(/true|false/.test(m)) cls='bool';
+    else if(/null/.test(m)) cls='null';
+    return `<span class="${cls}">${m}</span>`;
+  });
+}
+
+function updateMeta(){
+  const rows=[];
+  const missing = requiredMissing(current.fields, state);
+  if(missing.length){
+    rows.push(`<div class="row"><span class="pill req">Fill required</span><div>${missing.join(', ')}</div></div>`);
+  } else {
+    rows.push(`<div class="row"><span class="pill ok">Required set</span><div>All required fields are filled.</div></div>`);
+  }
+  rows.push(`<div class="row"><span class="pill rec">Reminder</span><div>Replace any placeholder text with your real data. Images must be absolute URLs.</div></div>`);
+  fieldMeta.innerHTML = rows.join('');
+}
+
+function requiredMissing(fields, data){
+  const out=[];
+  fields.forEach(fl=>{
+    if(fl.type==='const') return;
+    const v = data[fl.name];
+    if(fl.required){
+      const empty = (fl.type==='stringlist')? !(Array.isArray(v)&&v.some(s=>String(s).trim()))
+        : (fl.type==='object')? buildField(fl,v)===undefined
+        : (fl.type==='objectlist')? buildField(fl,v)===undefined
+        : !(v!=null && String(v).trim());
+      if(empty) out.push(fl.label);
+    }
+    // recurse into required nested object required fields only when parent has data
+  });
+  return out;
+}
+
+/* ============================ EXAMPLE / ACTIONS ============================ */
+function fillExample(){
+  fillObj(current.fields, state);
+  if(current.typeOptions && !state['@type']) state['@type']=current.typeOptions[0].value;
+  renderForm();
+}
+function fillObj(fields, data){
+  fields.forEach(fl=>{
+    if(fl.type==='const') return;
+    if(fl.type==='object'){ fillObj(fl.fields, data[fl.name]||={}); }
+    else if(fl.type==='objectlist'){ if(!data[fl.name]||!data[fl.name].length){ data[fl.name]=[initObject(fl.fields)]; } data[fl.name].forEach(it=>fillObj(fl.fields,it)); }
+    else if(fl.type==='stringlist'){ if(!data[fl.name]||!data[fl.name].some(Boolean)) data[fl.name]=[fl.placeholder||exampleFor(fl)]; }
+    else if(fl.type==='multiselect'){ if(!data[fl.name].length && fl.options[0]) data[fl.name]=[fl.options[0].value]; }
+    else if(fl.type==='select'){ if(!data[fl.name] && fl.options[0]) data[fl.name]=fl.options[0].value; }
+    else if(!data[fl.name]) data[fl.name]= fl.placeholder || exampleFor(fl);
+  });
+}
+function exampleFor(fl){
+  const map={
+    text:'YOUR_'+fl.name.toUpperCase(), textarea:'YOUR_'+fl.name.toUpperCase(),
+    url:'https://example.com', email:'hello@example.com', tel:'+1-555-123-4567',
+    number:'', date:'2026-01-15', datetime:'2026-01-15T09:00', time:'09:00'
+  };
+  return map[fl.type] ?? '';
+}
+
+function toast(){ const t=document.getElementById('toast'); t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),1200); }
+async function copy(text){ try{ await navigator.clipboard.writeText(text); toast(); }catch(e){
+  const ta=el('textarea'); ta.value=text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); toast();
+}}
+
+/* ============================ WIRE UP ============================ */
+typeSelect.addEventListener('change',()=>loadType(+typeSelect.value));
+document.getElementById('wrapScript').addEventListener('change',updateOutput);
+document.getElementById('copyBtn').addEventListener('click',()=>copy(currentJSONString(false)));
+document.getElementById('copyScriptBtn').addEventListener('click',()=>copy(currentJSONString(true)));
+document.getElementById('exampleBtn').addEventListener('click',fillExample);
+document.getElementById('resetBtn').addEventListener('click',()=>loadType(+typeSelect.value));
+document.getElementById('downloadBtn').addEventListener('click',()=>{
+  const blob=new Blob([currentJSONString(false)],{type:'application/json'});
+  const a=el('a'); a.href=URL.createObjectURL(blob); a.download=(current.typeOptions?state['@type']:current.type)+'-schema.json';
+  document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(a.href);
+});
+
+/* boot */
+loadType(0);
+</script>
+</body>
+</html>
