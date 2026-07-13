@@ -1,58 +1,85 @@
 # Schema Markup Generator
 
-A self-contained, no-backend browser tool that generates valid, production-ready
-**JSON-LD structured data** for 40+ [Schema.org](https://schema.org) types —
-Google's preferred format for rich results.
+Paste a URL (or a whole list) → it **crawls each page, auto-detects the right
+Schema.org type, extracts the real content, and generates valid JSON-LD** — then
+gives you an interface to review, tweak, and copy the code.
 
-Built from the **SEO Schema Builder** skill (Schema.org v30.0).
+Built from the SEO Schema Builder skill (Schema.org v30.0). No AI key required —
+detection is heuristic and deterministic.
 
-## Use it
+## Run it
 
-Open `index.html` in any browser — that's it. No build step, no server, no dependencies.
-
-You can also host it anywhere static (GitHub Pages, Netlify, S3, an internal wiki).
-
-## Features
-
-- **28 schema types across 10 categories** — Organization, LocalBusiness, Product,
-  Article/BlogPosting/NewsArticle, BreadcrumbList, FAQPage, HowTo, Recipe, VideoObject,
-  Event, JobPosting, Course, Book, Movie, SoftwareApplication, Physician, LegalService,
-  Vehicle, and more. Many carry subtype pickers (e.g. LocalBusiness → Restaurant, Store, Hotel…).
-- **Dynamic forms** — each type shows exactly the fields it needs, including nested objects
-  (address, offer, author, publisher), repeatable lists (FAQ Q&As, HowTo steps, breadcrumbs,
-  opening hours, reviews), and enum dropdowns (availability, condition, employment type…).
-- **Live JSON-LD output** with syntax highlighting — updates as you type; empty fields are
-  omitted automatically so the result is always clean.
-- **One-click actions** — Copy JSON-LD, Copy as `<script>` tag, Download `.json`, Fill example.
-- **Validation built in** — required-field checker plus direct links to the
-  [Schema.org Validator](https://validator.schema.org) and
-  [Google Rich Results Test](https://search.google.com/test/rich-results).
-- **Correct by construction** — auto `@context`/`@type`, auto `position` in breadcrumbs,
-  proper nesting (Question → acceptedAnswer → Answer, WebSite → SearchAction → EntryPoint), etc.
-- **Light & dark** theme aware, responsive down to mobile.
-
-## How to deploy the output
-
-Paste the generated code into a `<script>` tag in your page's `<head>`:
-
-```html
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "Product",
-  ...
-}
-</script>
+```bash
+node server.js
+# → http://localhost:3000
 ```
 
-Google accepts it in `<head>` or just before `</body>`.
+Node 18+ only. **Zero dependencies** — nothing to `npm install`.
 
-## Extending it
+## How it works
 
-All schema types are defined as data in the `SCHEMAS` array inside `index.html`.
-To add a new type, append an entry using the `f.*` field helpers (`f.text`, `f.url`,
-`f.obj`, `f.list`, `f.strlist`, `f.select`, `f.multi`, …). The rendering engine and
-JSON-LD builder pick it up automatically — no other changes needed.
+1. **Paste URLs** — one per line (up to 50), single or bulk.
+2. **It crawls each page** and reads:
+   - any JSON-LD structured data already on the page (strongest signal),
+   - Open Graph / Twitter / `article:` / `product:` meta tags,
+   - `<title>`, `<h1>`, meta description, canonical URL, `og:image`,
+   - price / currency / availability / SKU signals.
+3. **It auto-detects the type** — Product, Article/BlogPosting, Organization +
+   WebSite (homepages), LocalBusiness/Restaurant, Person, VideoObject, Book,
+   WebPage, and more — each with a **confidence level** and a "why this type"
+   explanation.
+4. **It generates the JSON-LD**, filling in real extracted data and marking any
+   gaps with clearly-labelled `YOUR_…` placeholders. A `BreadcrumbList` (derived
+   from the URL path) is added to each page by default.
+5. **You review it** in the interface:
+   - syntax-highlighted code per URL,
+   - warnings (missing images, unfilled placeholders, existing schema to dedupe),
+   - a **type override** dropdown to regenerate as a different type,
+   - **Copy** / **Download** per page, plus **Copy all** / **Export .json** for the batch,
+   - optional `<script type="application/ld+json">` wrapper.
 
-For types not yet included, look up exact required/recommended properties at
-`https://schema.org/{TypeName}`.
+## Project layout
+
+```
+server.js              Tiny zero-dep HTTP server: crawls URLs, serves the UI
+src/extract.js         The engine: HTML → metadata → type detection → JSON-LD (pure, testable)
+public/index.html      The crawler + review interface
+public/manual.html     Bonus: manual field-by-field builder for 28 types (no crawling)
+test/extract.test.mjs  Unit tests for the extraction engine
+```
+
+## Test
+
+```bash
+node test/extract.test.mjs
+```
+
+Covers product/article/homepage detection, existing-JSON-LD handling, breadcrumb
+generation, type override, and entity decoding — all against HTML fixtures (no network).
+
+## Notes & limits
+
+- **Crawling runs server-side** (browsers can't fetch other domains due to CORS),
+  which is why this is a small Node app rather than a single HTML file.
+- Detection is **heuristic**: it's strong when a page has decent meta tags / Open
+  Graph / existing structured data, and falls back to a generic `WebPage` (low
+  confidence) when a page is bare. Use the type override to correct it.
+- Always **replace `YOUR_…` placeholders** with real data and validate before
+  publishing:
+  [Schema.org Validator](https://validator.schema.org) ·
+  [Google Rich Results Test](https://search.google.com/test/rich-results).
+
+## Extending
+
+Add or adjust a type in `src/extract.js`:
+- teach `detectType()` a new signal, and
+- add a builder branch in `buildJsonLd()`.
+
+The server, API, and UI pick it up automatically.
+
+### Possible next steps
+
+- **Push to WordPress** — inject the generated schema straight into the matching
+  page on a connected WordPress site.
+- **Sitemap / CSV input** — queue every URL from a `sitemap.xml` or an upload.
+- **AI-assisted extraction** — an optional LLM fallback for pages with weak metadata.

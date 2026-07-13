@@ -1,0 +1,12 @@
+{
+  "name": "schema-markup-generator",
+  "version": "1.0.0",
+  "description": "Crawl any URL and auto-generate valid JSON-LD structured data, with a review interface.",
+  "type": "module",
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "start": "node server.js",
+    "test": "node test/extract.test.mjs"
+  },
+  "license": "MIT"
+}
